@@ -1,42 +1,39 @@
-const weatherSDK = require('/opt/weather-sdk');
+const axios = require("axios");
 
 exports.handler = async (event) => {
-    console.log("Received event:", JSON.stringify(event));
+    const { rawPath, requestContext } = event;
 
-    const path = event.rawPath;
-    const method = event.requestContext.http.method;
-
-    if (path === "/weather" && method === "GET") {
-        try {
-            const weatherData = await weatherSDK.getWeatherForecast();
-
-            if (!weatherData.hourly) {
-                return {
-                    statusCode: 500,
-                    body: JSON.stringify({ message: "Weather API response is invalid." }),
-                    headers: { "content-type": "application/json" }
-                };
-            }
-
-            return {
-                statusCode: 200,
-                body: JSON.stringify(weatherData),
-                headers: { "content-type": "application/json" }
-            };
-        } catch (error) {
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ message: "Internal Server Error: " + error.message }),
-                headers: { "content-type": "application/json" }
-            };
-        }
-    } else {
+    // Validate request path and method
+    if (rawPath !== "/weather" || requestContext.http.method !== "GET") {
         return {
             statusCode: 400,
             body: JSON.stringify({
-                message: `Bad request syntax or unsupported method. Request path: ${path}. HTTP method: ${method}`
+                statusCode: 400,
+                message: `Bad request syntax or unsupported method. Request path: ${rawPath}. HTTP method: ${requestContext.http.method}`
             }),
-            headers: { "content-type": "application/json" }
+            headers: { "content-type": "application/json" },
+            isBase64Encoded: false
+        };
+    }
+
+    try {
+        // Fetch weather data from external API
+        const response = await axios.get(
+            "https://api.open-meteo.com/v1/forecast?latitude=50.4375&longitude=30.5&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m&current=temperature_2m,wind_speed_10m"
+        );
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify(response.data),
+            headers: { "content-type": "application/json" },
+            isBase64Encoded: false
+        };
+    } catch (error) {
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Failed to fetch weather data" }),
+            headers: { "content-type": "application/json" },
+            isBase64Encoded: false
         };
     }
 };
