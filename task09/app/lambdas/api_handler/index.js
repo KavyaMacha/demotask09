@@ -3,7 +3,6 @@ const axios = require("axios");
 exports.handler = async (event) => {
     const { rawPath, requestContext } = event;
 
-    // Validate request path and method
     if (rawPath !== "/weather" || requestContext.http.method !== "GET") {
         return {
             statusCode: 400,
@@ -17,11 +16,7 @@ exports.handler = async (event) => {
     }
 
     try {
-        // Fetch weather data from external API
-        const response = await axios.get(
-            "https://api.open-meteo.com/v1/forecast?latitude=50.4375&longitude=30.5&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m&current=temperature_2m,wind_speed_10m"
-        );
-
+        const response = await axios.get("https://api.open-meteo.com/v1/forecast?latitude=50.4375&longitude=30.5&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m&current=temperature_2m,wind_speed_10m");
         return {
             statusCode: 200,
             body: JSON.stringify(response.data),
