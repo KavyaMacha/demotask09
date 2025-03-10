@@ -1,30 +1,31 @@
-const axios = require('axios');
+const axios = require("axios");
 
-async function getWeatherForecast() {
-    const API_URL = "https://api.open-meteo.com/v1/forecast";
-    const params = {
-        latitude: 50.4375,
-        longitude: 30.5,
-        hourly: "temperature_2m,relative_humidity_2m,wind_speed_10m",
-        current_weather: true
-    };
-
+exports.handler = async (event) => {
     try {
-        const response = await axios.get(API_URL, { params });
+        const response = await axios.get("https://api.open-meteo.com/v1/forecast", {
+            params: {
+                latitude: 40.7128,
+                longitude: -74.006,
+                hourly: "temperature_2m,relative_humidity_2m,wind_speed_10m"
+            }
+        });
 
-        // 🛠 Log the response for debugging
-        console.log("API Response:", JSON.stringify(response.data, null, 2));
+        console.log("API Response:", response.data); // Debugging log
 
-        // ✅ Ensure response contains 'hourly' and its fields
-        if (!response.data.hourly || !response.data.hourly.time) {
-            throw new Error("Invalid API response: 'hourly' data missing.");
+        if (!response.data.hourly) {
+            throw new Error("Missing hourly data in API response");
         }
 
-        return response.data;
+        return {
+            statusCode: 200,
+            body: JSON.stringify(response.data.hourly)
+        };
+
     } catch (error) {
         console.error("Error fetching weather data:", error.message);
-        throw new Error("Failed to fetch weather data.");
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Failed to fetch weather data" })
+        };
     }
-}
-
-module.exports = { getWeatherForecast };
+};
